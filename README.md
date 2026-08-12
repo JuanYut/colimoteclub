@@ -80,7 +80,9 @@ src/
 ├─ shared/
 │  ├─ api/client.ts           # instancia de axios
 │  └─ config/constants.ts     # API_BASE, R2_AUDIO_BASE, RADIO_EPOCH
-├─ widgets/                   # ⬜ 6 slices vacíos (ver siguientes pasos)
+├─ widgets/
+│  ├─ hero/                   # ✅ el título: barrido de luz + scramble
+│  └─ ...                     # ⬜ 5 slices vacíos (ver siguientes pasos)
 └─ pages/home/                # ⬜ vacío
 ```
 
@@ -93,12 +95,22 @@ El plan original del scaffold está en [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPL
 ### ✅ Funciona hoy
 
 - **El monito se mueve.** Plataformero 2D estilo Mario: `←`/`A` y `→`/`D` para
-  caminar, `Espacio`/`↑`/`W` para brincar. Gravedad, un solo salto (sin doble),
+  correr, `Espacio`/`↑`/`W` para brincar. Gravedad, un solo salto (sin doble),
   clamp a los bordes de la ventana y volteo del sprite según la dirección.
+- **Está animado con sprites.** Pixel art de un caballero, con ciclos de `idle`,
+  `run` y `jump`. La pose del salto sale de la física (subiendo / cumbre /
+  cayendo), no de un temporizador.
 - **El texto es el suelo.** El monito vive en el flujo del layout junto al `h1`,
-  así que arranca a su lado y camina sobre esa línea.
-- **11 tests en verde** (`pnpm test`): 4 de la radio, 7 de la física.
-- **Build y lint limpios.** Bundle: 314 kB (99 kB gzip).
+  así que arranca a su lado y corre sobre esa línea.
+- **El título tiene un barrido de luz** que recorre las letras con un gradiente
+  animado, en los verdes del logo.
+- **El título se revuelve** (efecto scramble) al cargar la página y cada vez que
+  el monito le pasa por encima, corriendo o brincando.
+- **Respeta `prefers-reduced-motion`**: sin barrido ni scramble para quien lo
+  tenga activado.
+- **32 tests en verde** (`pnpm test`): 4 de la radio, 7 de la física, 7 de la
+  animación, 6 del scramble, 5 del cruce y 3 del hero.
+- **Build y lint limpios.** Bundle: 326 kB (108 kB gzip).
 
 ### 🟡 Escrito pero sin conectar
 
@@ -112,9 +124,9 @@ Existe el código, compila, pero **nadie lo llama todavía**:
 
 ### ⬜ Carpetas vacías (solo `index.ts` con un comentario)
 
-`widgets/enter-screen`, `widgets/hero`, `widgets/now-playing`,
-`widgets/artists`, `widgets/donations`, `widgets/listener-count`,
-`features/reactions`, `pages/home`, `shared/ui`, `shared/lib`.
+`widgets/enter-screen`, `widgets/now-playing`, `widgets/artists`,
+`widgets/donations`, `widgets/listener-count`, `features/reactions`,
+`pages/home`, `shared/ui`, `shared/lib`.
 
 Es intencional: la estructura está lista, el contenido no.
 
@@ -219,6 +231,6 @@ sección de donaciones.
 | Tema | Detalle |
 | ---- | ------- |
 | Drift de audio | Ver paso 2 arriba. |
-| Sin tests de componentes | Testing Library está instalado pero solo hay tests de lógica pura. |
+| Pocos tests de componentes | Solo el hero tiene test de render; el resto son de lógica pura. |
 | Hueco del monito | Al caminar deja reservado su espacio de 48 px junto al título (el `transform` no reflowea). Sacarlo del flujo lo arregla, pero habría que calcular su posición inicial a mano. |
 | Peso del bundle | 99 kB gzip, casi todo `motion`. Aceptable por ahora. |
