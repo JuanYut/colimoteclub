@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Cloudflare (archivos temporales de wrangler)
+.wrangler
+
 # Variables de entorno
 .env
 .env.*
