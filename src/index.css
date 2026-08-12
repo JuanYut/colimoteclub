@@ -23,8 +23,13 @@ body {
   gap: 1rem;
 }
 
+/* Monoespaciada a proposito: el scramble cambia las letras en cada cuadro y con
+   una fuente proporcional el titulo cambiaria de ancho, arrastrando al monito
+   que vive en la misma fila. Con todos los glifos del mismo ancho, nada se mueve. */
 #stage h1 {
   margin: 0;
+  font-family:
+    ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 }
 
 /* Lo acerca al titulo: el sprite trae aire transparente a los lados, asi que
