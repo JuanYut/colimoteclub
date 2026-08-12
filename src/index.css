@@ -10,9 +10,19 @@ body {
 #center {
   min-height: 100vh;
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
   text-align: center;
+}
+
+/* Fila donde el monito y el titulo comparten piso. */
+#stage {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+#stage h1 {
+  margin: 0;
 }

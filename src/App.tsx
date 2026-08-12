@@ -1,8 +1,13 @@
+import { Character } from "@/features/character";
+
 function App() {
   return (
     <section id="center">
-      <img src="/favicon_colimoteclub.svg" alt="colimote.club" width={48} height={48} />
-      <h1>colimote.club</h1>
+      {/* El borde inferior del stage es el suelo: ahi se para el monito. */}
+      <div id="stage">
+        <Character />
+        <h1>colimote.club</h1>
+      </div>
     </section>
   );
 }
