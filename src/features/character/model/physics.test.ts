@@ -26,7 +26,7 @@ const run = (state: CharacterState, frames: number, i = input()) => {
 };
 
 describe('step', () => {
-  it('camina a la derecha y a la izquierda', () => {
+  it('se mueve a la derecha y a la izquierda', () => {
     const start = createCharacterState(100);
     expect(step(start, input({ right: true }), world, dt).x).toBeGreaterThan(100);
     expect(step(start, input({ left: true }), world, dt).x).toBeLessThan(100);

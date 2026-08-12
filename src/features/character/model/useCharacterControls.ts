@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMotionValue } from 'motion/react';
 import {
   createCharacterState,
@@ -7,6 +7,7 @@ import {
   type CharacterInput,
   type CharacterState,
 } from './physics';
+import { getAnimation, getFrame, type SpriteFrame } from './sprite';
 
 // Si la pestana estuvo inactiva, no queremos simular un salto gigante de golpe.
 const MAX_DT = 1 / 30;
@@ -34,7 +35,7 @@ function actionFor(key: string): Action | null {
 }
 
 /**
- * Controles de plataformas: flechas o A/D para caminar, espacio/W/arriba para
+ * Controles de plataformas: flechas o A/D para correr, espacio/W/arriba para
  * brincar. La simulacion corre en requestAnimationFrame y escribe en motion
  * values, asi que no dispara un render de React por cuadro.
  *
@@ -42,10 +43,13 @@ function actionFor(key: string): Action | null {
  * titulo) es el origen, y todo el movimiento son transforms relativos a ella.
  */
 export function useCharacterControls(size: number) {
-  const ref = useRef<HTMLImageElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const facing = useMotionValue(1);
+  // El sprite si vive en estado de React, pero solo se actualiza cuando cambia
+  // de cuadro (12 veces por segundo como mucho), no en cada frame.
+  const [sprite, setSprite] = useState<SpriteFrame>({ animation: 'idle', frame: 0 });
 
   useEffect(() => {
     const el = ref.current;
@@ -80,7 +84,7 @@ export function useCharacterControls(size: number) {
       if (action && action !== 'jump') input[action] = false;
     };
 
-    // Si la ventana pierde el foco, soltamos todo para que no se quede caminando.
+    // Si la ventana pierde el foco, soltamos todo para que no se quede corriendo.
     const onBlur = () => {
       input.left = false;
       input.right = false;
@@ -97,8 +101,13 @@ export function useCharacterControls(size: number) {
     const observer = new ResizeObserver(measure);
     if (stage) observer.observe(stage);
 
-    let frame = 0;
+    let raf = 0;
     let last = performance.now();
+
+    // Cuadro que ya esta pintado, para no re-renderizar si no cambio nada.
+    let shown: SpriteFrame = { animation: 'idle', frame: 0 };
+    // El reloj se reinicia con cada animacion: la carrera siempre empieza en 0.
+    let animationStart = last;
 
     const loop = (now: number) => {
       const dt = Math.min((now - last) / 1000, MAX_DT);
@@ -111,12 +120,20 @@ export function useCharacterControls(size: number) {
       y.set(-state.y); // en CSS el eje Y crece hacia abajo
       facing.set(state.facing);
 
-      frame = requestAnimationFrame(loop);
+      const animation = getAnimation(state);
+      if (animation !== shown.animation) animationStart = now;
+      const frame = getFrame(animation, state, now - animationStart);
+      if (animation !== shown.animation || frame !== shown.frame) {
+        shown = { animation, frame };
+        setSprite(shown);
+      }
+
+      raf = requestAnimationFrame(loop);
     };
-    frame = requestAnimationFrame(loop);
+    raf = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(raf);
       observer.disconnect();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
@@ -125,5 +142,5 @@ export function useCharacterControls(size: number) {
     };
   }, [size, x, y, facing]);
 
-  return { ref, x, y, facing };
+  return { ref, x, y, facing, sprite };
 }

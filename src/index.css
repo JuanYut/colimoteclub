@@ -26,3 +26,10 @@ body {
 #stage h1 {
   margin: 0;
 }
+
+/* Lo acerca al titulo: el sprite trae aire transparente a los lados, asi que
+   con el gap de 1rem se ve mas separado de lo que esta. Va del lado que da al
+   titulo, hoy la derecha. */
+#character {
+  margin-right: -0.75rem;
+}

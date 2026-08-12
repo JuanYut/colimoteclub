@@ -7,6 +7,7 @@ export interface CharacterState {
   vy: number; // velocidad vertical en px/s (positiva = subiendo)
   facing: 1 | -1; // hacia donde mira: 1 derecha, -1 izquierda
   grounded: boolean;
+  moving: boolean; // hay input horizontal: decide entre correr y estar quieto
 }
 
 export interface CharacterInput {
@@ -35,7 +36,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export function createCharacterState(x: number): CharacterState {
-  return { x, y: 0, vy: 0, facing: 1, grounded: true };
+  return { x, y: 0, vy: 0, facing: 1, grounded: true, moving: false };
 }
 
 /** Avanza la simulacion `dt` segundos. */
@@ -72,5 +73,6 @@ export function step(
     // Sin input horizontal conserva hacia donde venia mirando.
     facing: dir === 0 ? state.facing : (dir as 1 | -1),
     grounded,
+    moving: dir !== 0,
   };
 }
