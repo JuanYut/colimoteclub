@@ -73,7 +73,10 @@ src/
 │  ├─ radio-sync/             # 🟡 escrito, sin usar todavía
 │  │  ├─ model/getCurrentTrack.ts     # lógica pura (testeada)
 │  │  └─ model/useRadioSync.ts
-│  └─ reactions/              # ⬜ vacío (v2)
+│  └─ reactions/              # ✅ el globo de emojis (MVP)
+│     ├─ model/reactions.ts           # catálogo + estados (testeado)
+│     ├─ model/useReactions.ts        # tecla R, elección, auto-cierre
+│     └─ ui/ReactionBubble.tsx
 ├─ entities/
 │  ├─ track/                  # 🟡 tipo Track + getPlaylist()
 │  └─ artist/                 # 🟡 tipo Artist + getArtists()
@@ -86,7 +89,11 @@ src/
 └─ pages/home/                # ⬜ vacío
 ```
 
-El plan original del scaffold está en [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
+El plan original del scaffold está en [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md)
+(histórico: describe el arranque, no el estado de hoy).
+
+Las **reglas de trabajo** (qué hacer y qué no en cada sesión: idioma, commits,
+patrones, dependencias prohibidas) están en [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
@@ -100,6 +107,11 @@ El plan original del scaffold está en [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPL
 - **Está animado con sprites.** Pixel art de un caballero, con ciclos de `idle`,
   `run` y `jump`. La pose del salto sale de la física (subiendo / cumbre /
   cayendo), no de un temporizador.
+- **El monito reacciona.** `R` abre un globo blanco arriba de él con
+  [❤️ 👍 😈 🎵 👻 👋]; al hacer clic en uno, el globo se queda solo con ese
+  emoji ~3.5 s y el personaje hace una animación. `Escape` o `R` otra vez
+  cierran. ⚠️ MVP: la animación es prestada del *ataque 3* del pack, no es la
+  definitiva.
 - **El texto es el suelo.** El monito vive en el flujo del layout junto al `h1`,
   así que arranca a su lado y corre sobre esa línea.
 - **El título tiene un barrido de luz** que recorre las letras con un gradiente
@@ -108,9 +120,12 @@ El plan original del scaffold está en [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPL
   el monito le pasa por encima, corriendo o brincando.
 - **Respeta `prefers-reduced-motion`**: sin barrido ni scramble para quien lo
   tenga activado.
-- **32 tests en verde** (`pnpm test`): 4 de la radio, 7 de la física, 7 de la
-  animación, 6 del scramble, 5 del cruce y 3 del hero.
-- **Build y lint limpios.** Bundle: 326 kB (108 kB gzip).
+- **Firma al pie**: `© 2026 juanyutdev - building stuff, no reason`, fija al
+  fondo y fuera del centrado para no mover al monito.
+- **50 tests en verde** (`pnpm test`): 4 de la radio, 7 de la física, 9 de la
+  animación, 6 del scramble, 5 del cruce, 3 del hero, 12 de las reacciones y 4
+  del globo.
+- **Build y lint limpios.** Bundle: 333 kB (111 kB gzip).
 
 ### 🟡 Escrito pero sin conectar
 
@@ -125,8 +140,7 @@ Existe el código, compila, pero **nadie lo llama todavía**:
 ### ⬜ Carpetas vacías (solo `index.ts` con un comentario)
 
 `widgets/enter-screen`, `widgets/now-playing`, `widgets/artists`,
-`widgets/donations`, `widgets/listener-count`, `features/reactions`,
-`pages/home`, `shared/ui`, `shared/lib`.
+`widgets/donations`, `widgets/listener-count`, `pages/home`, `shared/ui`.
 
 Es intencional: la estructura está lista, el contenido no.
 
@@ -171,6 +185,15 @@ reordena qué suena para todo el mundo.
   - `blur` de la ventana suelta las teclas (si no, se queda caminando solo).
   - Los límites se calculan desde `offsetLeft`, que el `transform` no altera, y
     se re-miden en `resize` y con un `ResizeObserver`.
+- **Las reacciones no lo conocen.** `features/reactions` y `features/character`
+  son hermanos y por FSD no se importan: `useReactions` expone `emoteKey`, un
+  contador que sube con cada elección, y `App` se lo pasa al monito. El globo
+  viaja como `children` del personaje, así lo sigue al caminar sin que la
+  feature del monito sepa qué está dibujando.
+  - La animación de reacción es de **un solo tiro**: se congela en el último
+    cuadro y se cancela si el jugador se mueve o brinca (la física manda).
+  - `emoteKey` se lee por `ref` dentro del loop: si fuera dependencia del
+    `useEffect`, cada reacción reiniciaría la física.
 
 ---
 
@@ -208,21 +231,29 @@ usuario. Ese es el propósito del widget `enter-screen`.
 
 ### 4. Publicar
 
-- [ ] Configurar el deploy a Cloudflare Pages (no hay `wrangler.toml`; la carpeta
-      `.wrangler/` es solo temporal de una prueba).
-- [ ] Apuntar el dominio `colimote.club`.
+El deploy **ya funciona**: `pnpm build` y `wrangler pages deploy dist`. Los
+detalles, la checklist previa y el rollback están en
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+- [ ] Apuntar el dominio `colimote.club` en Pages → *Custom domains*.
+- [ ] Configurar CORS del bucket R2 para que el `<audio>` pueda leerlo.
 
 ### 5. Pulir el juego
 
-- [ ] **Controles táctiles**: en móvil el monito no se puede mover.
-- [ ] Sprite animado (hoy es el mismo SVG estático moviéndose).
+- [ ] **Controles táctiles**: en móvil el monito no se puede mover, y sin
+      teclado tampoco puede abrir el menú de reacciones (falta un botón).
+- [ ] **Sprites propios de reacción**: hoy las 6 usan prestado el *ataque 3*.
+      Lo natural sería una por emoji (saludo, baile, susto…). Se cambia en
+      `ANIMATIONS.emote` y `SHEETS` de `features/character`.
+- [ ] El recorte (`CROP`) está medido para idle/run/jump: al ataque le corta la
+      espada. Habrá que re-medirlo cuando existan los sprites buenos.
 - [ ] Suelo visible / decorado.
 
 ### 6. v2 (después del MVP)
 
-Mapa de los volcanes de Colima · reacciones con `AnimatePresence` ·
-conteo de oyentes (Worker + GA4 realtime) · multiplayer con Durable Objects ·
-sección de donaciones.
+Mapa de los volcanes de Colima · conteo de oyentes (Worker + GA4 realtime) ·
+multiplayer con Durable Objects (ver la reacción de los demás) · sección de
+donaciones.
 
 ---
 
