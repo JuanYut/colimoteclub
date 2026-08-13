@@ -1,6 +1,11 @@
 :root {
   color: #ffffff;
   background: #08060d;
+
+  /* La unica fuente del sitio. Vive aqui porque la comparten el titulo y la
+     firma, y no queremos que se separen sin querer. */
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas,
+    monospace;
 }
 
 body {
@@ -28,8 +33,7 @@ body {
    que vive en la misma fila. Con todos los glifos del mismo ancho, nada se mueve. */
 #stage h1 {
   margin: 0;
-  font-family:
-    ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 /* Lo acerca al titulo: el sprite trae aire transparente a los lados, asi que
