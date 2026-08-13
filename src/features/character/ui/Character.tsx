@@ -1,10 +1,11 @@
-import { useCallback, useEffect, type RefObject } from "react";
+import { useCallback, useEffect, type ReactNode, type RefObject } from "react";
 import { motion } from "motion/react";
 import { useCharacterControls } from "../model/useCharacterControls";
 import { ANIMATIONS, type AnimationName } from "../model/sprite";
 import idleSheet from "../assets/character_sprites/IDLE.png";
 import runSheet from "../assets/character_sprites/RUN.png";
 import jumpSheet from "../assets/character_sprites/JUMP.png";
+import emoteSheet from "../assets/character_sprites/ATTACK 3.png";
 
 // Geometria medida de los PNG, no la que dice la descripcion del pack.
 // Cada cuadro del sheet mide 96x84, pero el caballero solo ocupa una parte:
@@ -22,16 +23,27 @@ const SHEETS: Record<AnimationName, string> = {
   idle: idleSheet,
   run: runSheet,
   jump: jumpSheet,
+  // Prestado del ataque 3 mientras no haya sprites de reacciones: el recorte
+  // le corta la espada, pero para el MVP basta con que se note el movimiento.
+  emote: emoteSheet,
 };
 
 interface CharacterProps {
   // Opcional: deja que la pagina siga por donde va el monito, por ejemplo para
   // reaccionar cuando pasa por encima de algo.
   nodeRef?: RefObject<HTMLDivElement | null>;
+  // Contador: cada cambio dispara una vez la animacion de reaccion.
+  emoteKey?: number;
+  // Lo que se dibuje aqui flota arriba del monito y viaja con el (el globo de
+  // reacciones, por ejemplo). El personaje no sabe que es.
+  children?: ReactNode;
 }
 
-export function Character({ nodeRef }: CharacterProps) {
-  const { ref, x, y, facing, sprite } = useCharacterControls(CROP.w * SCALE);
+export function Character({ nodeRef, emoteKey, children }: CharacterProps) {
+  const { ref, x, y, facing, sprite } = useCharacterControls(
+    CROP.w * SCALE,
+    emoteKey,
+  );
 
   // El nodo lo ocupan dos partes: la fisica, que mide su posicion de layout, y
   // quien lo quiera observar desde fuera.
@@ -57,22 +69,46 @@ export function Character({ nodeRef }: CharacterProps) {
     <motion.div
       ref={setNode}
       id="character"
-      role="img"
-      aria-label="Tu monito"
       style={{
+        position: "relative", // ancla de lo que flota encima
         width: CROP.w * SCALE,
         height: CROP.h * SCALE,
         flexShrink: 0,
         x,
         y,
-        scaleX: facing,
-        backgroundImage: `url(${SHEETS[animation]})`,
-        backgroundSize: `${ANIMATIONS[animation].frames * CELL.w * SCALE}px ${CELL.h * SCALE}px`,
-        backgroundPosition: `${-(frame * CELL.w + CROP.x) * SCALE}px ${-CROP.y * SCALE}px`,
-        backgroundRepeat: "no-repeat",
-        imageRendering: "pixelated",
-        pointerEvents: "none",
       }}
-    />
+    >
+      {/* Fuera del sprite a proposito: si fuera hijo suyo, el volteo al mirar a
+          la izquierda tambien espejearia los emojis. */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "100%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          marginBottom: 6,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        {children}
+      </div>
+
+      <motion.div
+        role="img"
+        aria-label="Tu monito"
+        style={{
+          width: "100%",
+          height: "100%",
+          scaleX: facing,
+          backgroundImage: `url(${SHEETS[animation]})`,
+          backgroundSize: `${ANIMATIONS[animation].frames * CELL.w * SCALE}px ${CELL.h * SCALE}px`,
+          backgroundPosition: `${-(frame * CELL.w + CROP.x) * SCALE}px ${-CROP.y * SCALE}px`,
+          backgroundRepeat: "no-repeat",
+          imageRendering: "pixelated",
+          pointerEvents: "none",
+        }}
+      />
+    </motion.div>
   );
 }

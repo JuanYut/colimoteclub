@@ -4,7 +4,7 @@ import {
   WORLD_DEFAULTS,
   type CharacterState,
 } from "./physics";
-import { ANIMATIONS, getAnimation, getFrame } from "./sprite";
+import { ANIMATIONS, EMOTE_MS, getAnimation, getFrame } from "./sprite";
 
 const makeState = (over: Partial<CharacterState> = {}): CharacterState => ({
   ...createCharacterState(0),
@@ -25,6 +25,12 @@ describe("getAnimation", () => {
     expect(getAnimation(makeState({ grounded: false, moving: true }))).toBe(
       "jump",
     );
+  });
+
+  it("reacciona solo quieto en el suelo: la fisica manda", () => {
+    expect(getAnimation(makeState(), true)).toBe("emote");
+    expect(getAnimation(makeState({ moving: true }), true)).toBe("run");
+    expect(getAnimation(makeState({ grounded: false }), true)).toBe("jump");
   });
 });
 
@@ -49,6 +55,16 @@ describe("getFrame", () => {
       expect(getFrame("idle", s, ms)).toBeLessThan(ANIMATIONS.idle.frames);
       expect(getFrame("idle", s, ms)).toBeGreaterThanOrEqual(0);
     }
+  });
+
+  it("la reaccion no hace loop: se queda en el ultimo cuadro", () => {
+    const s = makeState();
+    expect(getFrame("emote", s, 0)).toBe(0);
+    expect(getFrame("emote", s, EMOTE_MS)).toBe(ANIMATIONS.emote.frames - 1);
+    // Aunque se pase de largo, no vuelve a empezar.
+    expect(getFrame("emote", s, EMOTE_MS * 3)).toBe(
+      ANIMATIONS.emote.frames - 1,
+    );
   });
 
   it("el brinco elige la pose segun la velocidad vertical, no el reloj", () => {
